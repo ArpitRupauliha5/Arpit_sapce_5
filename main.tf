@@ -1,5 +1,45 @@
 provider "aws" {
-  region = "ap-south-1"
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  description = "AWS region to deploy resources in"
+  default     = "ap-south-1"
+}
+
+variable "bucket_prefix" {
+  description = "Prefix for the S3 bucket name"
+  default     = "arpit0234"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  default     = "10.0.0.0/16"
+}
+
+variable "subnet_cidr" {
+  description = "CIDR block for the subnet"
+  default     = "10.0.1.0/24"
+}
+
+variable "availability_zone" {
+  description = "Availability zone for the subnet"
+  default     = "ap-south-1a"
+}
+
+variable "ami_id" {
+  description = "AMI ID for EC2 instance"
+  default     = "ami-02d26659fd82cf299"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  default     = "t3.micro"
+}
+
+variable "key_name" {
+  description = "Key pair name for EC2 SSH access"
+  default     = "terra-key"
 }
 
 resource "random_id" "rand" {
@@ -7,7 +47,7 @@ resource "random_id" "rand" {
 }
 
 resource "aws_s3_bucket" "arpit_bucket" {
-  bucket = "arpit0234-${random_id.rand.hex}"
+  bucket = "${var.bucket_prefix}-${random_id.rand.hex}"
   tags = {
     Name        = "ArpitBucket"
     Environment = "Dev"
@@ -15,7 +55,7 @@ resource "aws_s3_bucket" "arpit_bucket" {
 }
 
 resource "aws_vpc" "arpit_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr
   tags = {
     Name = "ArpitVPC"
   }
@@ -23,8 +63,8 @@ resource "aws_vpc" "arpit_vpc" {
 
 resource "aws_subnet" "arpit_subnet" {
   vpc_id                  = aws_vpc.arpit_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "ap-south-1a"
+  cidr_block              = var.subnet_cidr
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
   tags = {
     Name = "ArpitSubnet"
@@ -86,13 +126,12 @@ resource "aws_security_group" "arpit_sg" {
 }
 
 resource "aws_instance" "arpit_ec2" {
-  ami                         = "ami-02d26659fd82cf299"
-  instance_type               = "t3.micro"
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
   subnet_id                   = aws_subnet.arpit_subnet.id
   vpc_security_group_ids      = [aws_security_group.arpit_sg.id]
   associate_public_ip_address = true
-  key_name                    = "terra-key"
-
+  key_name                    = var.key_name
   tags = {
     Name = "ArpitEC2"
   }
@@ -105,3 +144,4 @@ output "ec2_public_ip" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.arpit_bucket.bucket
 }
+``
